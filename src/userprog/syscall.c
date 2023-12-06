@@ -1,591 +1,612 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
+#include <string.h>
 #include <syscall-nr.h>
-#include "threads/interrupt.h"
-#include "threads/thread.h"
-#include "threads/malloc.h"
-#include "threads/synch.h"
-#include "threads/vaddr.h"
-#include "userprog/pagedir.h"
 #include "userprog/process.h"
-#include <user/syscall.h>
+#include "userprog/pagedir.h"
 #include "devices/input.h"
 #include "devices/shutdown.h"
-#include "filesys/file.h"
+#include "filesys/directory.h"
 #include "filesys/filesys.h"
+#include "filesys/file.h"
+#include "threads/interrupt.h"
+#include "threads/malloc.h"
+#include "threads/palloc.h"
+#include "threads/thread.h"
+#include "threads/vaddr.h"
+#include "vm/page.h"
 
-#define MAX_ARGS 3
 
+static int sys_halt (void);
+static int sys_exit (int status);
+static int sys_exec (const char *ufile);
+static int sys_wait (tid_t);
+static int sys_create (const char *ufile, unsigned initial_size);
+static int sys_remove (const char *ufile);
+static int sys_open (const char *ufile);
+static int sys_filesize (int handle);
+static int sys_read (int handle, void *udst_, unsigned size);
+static int sys_write (int handle, void *usrc_, unsigned size);
+static int sys_seek (int handle, unsigned position);
+static int sys_tell (int handle);
+static int sys_close (int handle);
+static int sys_mmap (int handle, void *addr);
+static int sys_munmap (int mapping);
 
 static void syscall_handler (struct intr_frame *);
-int add_file (struct file *file_name);
-void get_args (struct intr_frame *f, int *arg, int num_of_args);
-void syscall_halt (void);
-pid_t syscall_exec(const char* cmdline);
-int syscall_wait(pid_t pid);
-bool syscall_create(const char* file_name, unsigned starting_size);
-bool syscall_remove(const char* file_name);
-int syscall_open(const char * file_name);
-int syscall_filesize(int filedes);
-int syscall_read(int filedes, void *buffer, unsigned length);
-int syscall_write (int filedes, const void * buffer, unsigned byte_size);
-void syscall_seek (int filedes, unsigned new_position);
-unsigned syscall_tell(int fildes);
-void syscall_close(int filedes);
-void validate_ptr (const void* vaddr);
-void validate_str (const void* str);
-void validate_buffer (const void* buf, unsigned byte_size);
+static void copy_in (void *, const void *, size_t);
 
-bool FILE_LOCK_INIT = false;
+static struct lock fs_lock;
 
-/*
- * System call initializer
- * It handles the set up for system call operations.
- */
 void
-syscall_init (void) 
+syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+  lock_init (&fs_lock);
 }
 
-/*
- * This method handles for various case of system command.
- * This handler invokes the proper function call to be carried
- * out base on the command line.
- */
+/* System call handler. */
 static void
-syscall_handler (struct intr_frame *f UNUSED) 
+syscall_handler (struct intr_frame *f)
 {
-  if (!FILE_LOCK_INIT)
-  {
-    lock_init(&file_system_lock);
-    FILE_LOCK_INIT = true;
-  }
-  
-  int arg[MAX_ARGS];
-  int esp = getpage_ptr((const void *) f->esp);
-  
-  switch (* (int *) esp)
-  {
-    case SYS_HALT:
-      syscall_halt();
-      break;
-      
-    case SYS_EXIT:
-      // fill arg with the amount of arguments needed
-      get_args(f, &arg[0], 1);
-      syscall_exit(arg[0]);
-      break;
-      
-    case SYS_EXEC:
-      // fill arg with the amount of arguments needed
-      get_args(f, &arg[0], 1);
-      
-      // check if command line is valid
-      validate_str((const void*)arg[0]);
-      
-      // get page pointer
-      arg[0] = getpage_ptr((const void *)arg[0]);
-      /* syscall_exec(const char* cmdline) */
-      f->eax = syscall_exec((const char*)arg[0]); // execute the command line
-      break;
-      
-    case SYS_WAIT:
-      // fill arg with the amount of arguments needed
-      get_args(f, &arg[0], 1);
-      f->eax = syscall_wait(arg[0]);
-      break;
-      
-    case SYS_CREATE:
-      // fill arg with the amount of arguments needed
-      get_args(f, &arg[0], 2);
-      
-      //check if command line is valid
-      validate_str((const void *)arg[0]);
-      
-      // get page pointer
-      arg[0] = getpage_ptr((const void *) arg[0]);
-      
-      /* syscall_create(const char* file_name, unsigned starting_size) */
-      f->eax = syscall_create((const char *)arg[0], (unsigned)arg[1]);  // create this file
-      break;
-      
-    case SYS_REMOVE:
-      // fill arg with the amount of arguments needed
-      get_args(f, &arg[0], 1);
-      
-      /* check if command line is valid */
-      validate_str((const void*)arg[0]);
-      
-      // get page pointer
-      arg[0] = getpage_ptr((const void *) arg[0]);
-      
-      /* syscall_remove(const char* file_name) */
-      f->eax = syscall_remove((const char *)arg[0]);  // remove this file
-      break;
-      
-    case SYS_OPEN:
-      // fill arg with amount of arguments needed
-      get_args(f, &arg[0], 1);
-      
-      /* Check if command line is valid.
-       * We do not want to open junk which can cause a crash 
-       */
-       validate_str((const void*)arg[0]);
-     
-     // get page pointer
-      arg[0] = getpage_ptr((const void *)arg[0]);
-      
-      /* syscall_open(int filedes) */
-      f->eax = syscall_open((const char *)arg[0]);  // open this file
-      break;
-      
-    case SYS_FILESIZE:
-      // fill arg with amount of arguments needed
-      get_args(f, &arg[0], 1);
-      
-      /* syscall_filesize (const char *file_name) */
-      f->eax = syscall_filesize(arg[0]);  // obtain file size
-      break;
-      
-    case SYS_READ:
-      // fill arg with the amount of arguments needed
-      get_args(f, &arg[0], 3);
-      
-      /* Check if the buffer is valid.
-       * We do not want to mess with a buffer that is out of our
-       * reserved virtual memory 
-       */
-       validate_buffer((const void*)arg[1], (unsigned)arg[2]);
-       
-      // get page pointer
-      arg[1] = getpage_ptr((const void *)arg[1]); 
-      
-      /* syscall_write (int filedes, const void * buffer, unsigned bytes)*/
-      f->eax = syscall_read(arg[0], (void *) arg[1], (unsigned) arg[2]);
-      break;
-      
-    case SYS_WRITE:
-      
-      // fill arg with the amount of arguments needed
-      get_args(f, &arg[0], 3);
-      
-      /* Check if the buffer is valid.
-       * We do not want to mess with a buffer that is out of our
-       * reserved virtual memory 
-       */
-       validate_buffer((const void*)arg[1], (unsigned)arg[2]);
-       
-      // get page pointer
-      arg[1] = getpage_ptr((const void *)arg[1]); 
-      
-      /* syscall_write (int filedes, const void * buffer, unsigned bytes)*/
-      f->eax = syscall_write(arg[0], (const void *) arg[1], (unsigned) arg[2]);
-      break;
-      
-    case SYS_SEEK:
-      // fill arg with the amount of arguments needed
-      get_args(f, &arg[0], 2);
-      /* syscall_seek(int filedes, unsigned new_position) */
-      syscall_seek(arg[0], (unsigned)arg[1]);
-      break;
-      
-    case SYS_TELL:
-      // fill arg with the amount of arguments needed
-      get_args(f, &arg[0], 1);
-      /* syscall_tell(int filedes) */
-      f->eax = syscall_tell(arg[0]);
-      break;
-    
-    case SYS_CLOSE:
-      // fill arg with the amount of arguments needed
-      get_args (f, &arg[0], 1);
-      /* syscall_close(int filedes) */
-      syscall_close(arg[0]);
-      break;
-      
-    default:
-      break;
-  }
-}
+  typedef int syscall_function (int, int, int);
 
-/* halt */
-void
-syscall_halt (void)
-{
-  shutdown_power_off(); // from shutdown.h
-}
-
-/* get arguments from stack */
-void
-get_args (struct intr_frame *f, int *args, int num_of_args)
-{
-  int i;
-  int *ptr;
-  for (i = 0; i < num_of_args; i++)
-  {
-    ptr = (int *) f->esp + i + 1;
-    validate_ptr((const void *) ptr);
-    args[i] = *ptr;
-  }
-}
-
-/* System call exit 
- * Checks if the current thread to exit is a child.
- * If so update the child's parent information accordingly.
- */
-void
-syscall_exit (int status)
-{
-  struct thread *cur = thread_current();
-  if (is_thread_alive(cur->parent) && cur->cp)
-  {
-    if (status < 0)
+  /* A system call. */
+  struct syscall
     {
-      status = -1;
-    }
-    cur->cp->status = status;
-  }
-  printf("%s: exit(%d)\n", cur->name, status);
-  thread_exit();
-}
+      size_t arg_cnt;           /* Number of arguments. */
+      syscall_function *func;   /* Implementation. */
+    };
 
-/* syscall exec
- * Executes the command line and returns 
- * the pid of the thread currently executing
- * the command.
- */
-pid_t
-syscall_exec(const char* cmdline)
-{
-    pid_t pid = process_execute(cmdline);
-    struct child_process *child_process_ptr = find_child_process(pid);
-    if (!child_process_ptr)
+  /* Table of system calls. */
+  static const struct syscall syscall_table[] =
     {
-      return ERROR;
-    }
-    /* check if process if loaded */
-    if (child_process_ptr->load_status == NOT_LOADED)
+      {0, (syscall_function *) sys_halt},
+      {1, (syscall_function *) sys_exit},
+      {1, (syscall_function *) sys_exec},
+      {1, (syscall_function *) sys_wait},
+      {2, (syscall_function *) sys_create},
+      {1, (syscall_function *) sys_remove},
+      {1, (syscall_function *) sys_open},
+      {1, (syscall_function *) sys_filesize},
+      {3, (syscall_function *) sys_read},
+      {3, (syscall_function *) sys_write},
+      {2, (syscall_function *) sys_seek},
+      {1, (syscall_function *) sys_tell},
+      {1, (syscall_function *) sys_close},
+      {2, (syscall_function *) sys_mmap},
+      {1, (syscall_function *) sys_munmap},
+    };
+
+  const struct syscall *sc;
+  unsigned call_nr;
+  int args[3];
+
+  /* Get the system call. */
+  copy_in (&call_nr, f->esp, sizeof call_nr);
+  if (call_nr >= sizeof syscall_table / sizeof *syscall_table)
+    thread_exit ();
+  sc = syscall_table + call_nr;
+
+  /* Get the system call arguments. */
+  ASSERT (sc->arg_cnt <= sizeof args / sizeof *args);
+  memset (args, 0, sizeof args);
+  copy_in (args, (uint32_t *) f->esp + 1, sizeof *args * sc->arg_cnt);
+
+  /* Execute the system call,
+     and set the return value. */
+  f->eax = sc->func (args[0], args[1], args[2]);
+}
+
+/* Copies SIZE bytes from user address USRC to kernel address
+   DST.
+   Call thread_exit() if any of the user accesses are invalid. */
+static void
+copy_in (void *dst_, const void *usrc_, size_t size)
+{
+  uint8_t *dst = dst_;
+  const uint8_t *usrc = usrc_;
+
+  while (size > 0)
     {
-      sema_down(&child_process_ptr->load_sema);
+      size_t chunk_size = PGSIZE - pg_ofs (usrc);
+      if (chunk_size > size)
+        chunk_size = size;
+
+      if (!page_lock (usrc, false))
+        thread_exit ();
+      memcpy (dst, usrc, chunk_size);
+      page_unlock (usrc);
+
+      dst += chunk_size;
+      usrc += chunk_size;
+      size -= chunk_size;
     }
-    /* check if process failed to load */
-    if (child_process_ptr->load_status == LOAD_FAIL)
+}
+
+/* Creates a copy of user string US in kernel memory
+   and returns it as a page that must be freed with
+   palloc_free_page().
+   Truncates the string at PGSIZE bytes in size.
+   Call thread_exit() if any of the user accesses are invalid. */
+static char *
+copy_in_string (const char *us)
+{
+  char *ks;
+  char *upage;
+  size_t length;
+
+  ks = palloc_get_page (0);
+  if (ks == NULL)
+    thread_exit ();
+
+  length = 0;
+  for (;;)
     {
-      remove_child_process(child_process_ptr);
-      return ERROR;
+      upage = pg_round_down (us);
+      if (!page_lock (upage, false))
+        goto lock_error;
+
+      for (; us < upage + PGSIZE; us++)
+        {
+          ks[length++] = *us;
+          if (*us == '\0')
+            {
+              page_unlock (upage);
+              return ks;
+            }
+          else if (length >= PGSIZE)
+            goto too_long_error;
+        }
+
+      page_unlock (upage);
     }
-    return pid;
+
+ too_long_error:
+  page_unlock (upage);
+ lock_error:
+  palloc_free_page (ks);
+  thread_exit ();
 }
 
-/* wait */
-int
-syscall_wait(pid_t pid)
+/* Halt system call. */
+static int
+sys_halt (void)
 {
-  return process_wait(pid);
+  shutdown_power_off ();
 }
 
-/* syscall_create */
-bool
-syscall_create(const char* file_name, unsigned starting_size)
+/* Exit system call. */
+static int
+sys_exit (int exit_code)
 {
-  lock_acquire(&file_system_lock);
-  bool successful = filesys_create(file_name, starting_size); // from filesys.h
-  lock_release(&file_system_lock);
-  return successful;
+  thread_current ()->exit_code = exit_code;
+  thread_exit ();
+  NOT_REACHED ();
 }
 
-/* syscall_remove */
-bool
-syscall_remove(const char* file_name)
+/* Exec system call. */
+static int
+sys_exec (const char *ufile)
 {
-  lock_acquire(&file_system_lock);
-  bool successful = filesys_remove(file_name); // from filesys.h
-  lock_release(&file_system_lock);
-  return successful;
+  tid_t tid;
+  char *kfile = copy_in_string (ufile);
+
+  lock_acquire (&fs_lock);
+  tid = process_execute (kfile);
+  lock_release (&fs_lock);
+
+  palloc_free_page (kfile);
+
+  return tid;
 }
 
-/* syscall_open */
-int
-syscall_open(const char *file_name)
+/* Wait system call. */
+static int
+sys_wait (tid_t child)
 {
-  lock_acquire(&file_system_lock);
-  struct file *file_ptr = filesys_open(file_name); // from filesys.h
-  if (!file_ptr)
+  return process_wait (child);
+}
+
+/* Create system call. */
+static int
+sys_create (const char *ufile, unsigned initial_size)
+{
+  char *kfile = copy_in_string (ufile);
+  bool ok;
+
+  lock_acquire (&fs_lock);
+  ok = filesys_create (kfile, initial_size);
+  lock_release (&fs_lock);
+
+  palloc_free_page (kfile);
+
+  return ok;
+}
+
+/* Remove system call. */
+static int
+sys_remove (const char *ufile)
+{
+  char *kfile = copy_in_string (ufile);
+  bool ok;
+
+  lock_acquire (&fs_lock);
+  ok = filesys_remove (kfile);
+  lock_release (&fs_lock);
+
+  palloc_free_page (kfile);
+
+  return ok;
+}
+
+/* A file descriptor, for binding a file handle to a file. */
+struct file_descriptor
   {
-    lock_release(&file_system_lock);
-    return ERROR;
-  }
-  int filedes = add_file(file_ptr);
-  lock_release(&file_system_lock);
-  return filedes;
-}
+    struct list_elem elem;      /* List element. */
+    struct file *file;          /* File. */
+    int handle;                 /* File handle. */
+  };
 
-/* syscall_filesize */
-int
-syscall_filesize(int filedes)
+/* Open system call. */
+static int
+sys_open (const char *ufile)
 {
-  lock_acquire(&file_system_lock);
-  struct file *file_ptr = get_file(filedes);
-  if (!file_ptr)
-  {
-    lock_release(&file_system_lock);
-    return ERROR;
-  }
-  int filesize = file_length(file_ptr); // from file.h
-  lock_release(&file_system_lock);
-  return filesize;
-}
+  char *kfile = copy_in_string (ufile);
+  struct file_descriptor *fd;
+  int handle = -1;
 
-/* syscall_read */
-#define STD_INPUT 0
-#define STD_OUTPUT 1
-int
-syscall_read(int filedes, void *buffer, unsigned length)
-{
-  if (length <= 0)
-  {
-    return length;
-  }
-  
-  if (filedes == STD_INPUT)
-  {
-    unsigned i = 0;
-    uint8_t *local_buf = (uint8_t *) buffer;
-    for (;i < length; i++)
+  fd = malloc (sizeof *fd);
+  if (fd != NULL)
     {
-      // retrieve pressed key from the input buffer
-      local_buf[i] = input_getc(); // from input.h
+      lock_acquire (&fs_lock);
+      fd->file = filesys_open (kfile);
+      if (fd->file != NULL)
+        {
+          struct thread *cur = thread_current ();
+          handle = fd->handle = cur->next_handle++;
+          list_push_front (&cur->fds, &fd->elem);
+        }
+      else
+        free (fd);
+      lock_release (&fs_lock);
     }
-    return length;
-  }
-  
-  /* read from file */
-  lock_acquire(&file_system_lock);
-  struct file *file_ptr = get_file(filedes);
-  if (!file_ptr)
-  {
-    lock_release(&file_system_lock);
-    return ERROR;
-  }
-  int bytes_read = file_read(file_ptr, buffer, length); // from file.h
-  lock_release (&file_system_lock);
+
+  palloc_free_page (kfile);
+  return handle;
+}
+
+/* Returns the file descriptor associated with the given handle.
+   Terminates the process if HANDLE is not associated with an
+   open file. */
+static struct file_descriptor *
+lookup_fd (int handle)
+{
+  struct thread *cur = thread_current ();
+  struct list_elem *e;
+
+  for (e = list_begin (&cur->fds); e != list_end (&cur->fds);
+       e = list_next (e))
+    {
+      struct file_descriptor *fd;
+      fd = list_entry (e, struct file_descriptor, elem);
+      if (fd->handle == handle)
+        return fd;
+    }
+
+  thread_exit ();
+}
+
+/* Filesize system call. */
+static int
+sys_filesize (int handle)
+{
+  struct file_descriptor *fd = lookup_fd (handle);
+  int size;
+
+  lock_acquire (&fs_lock);
+  size = file_length (fd->file);
+  lock_release (&fs_lock);
+
+  return size;
+}
+
+/* Read system call. */
+static int
+sys_read (int handle, void *udst_, unsigned size)
+{
+  uint8_t *udst = udst_;
+  struct file_descriptor *fd;
+  int bytes_read = 0;
+
+  fd = lookup_fd (handle);
+  while (size > 0)
+    {
+      /* How much to read into this page? */
+      size_t page_left = PGSIZE - pg_ofs (udst);
+      size_t read_amt = size < page_left ? size : page_left;
+      off_t retval;
+
+      /* Read from file into page. */
+      if (handle != STDIN_FILENO)
+        {
+          if (!page_lock (udst, true))
+            thread_exit ();
+          lock_acquire (&fs_lock);
+          retval = file_read (fd->file, udst, read_amt);
+          lock_release (&fs_lock);
+          page_unlock (udst);
+        }
+      else
+        {
+          size_t i;
+
+          for (i = 0; i < read_amt; i++)
+            {
+              char c = input_getc ();
+              if (!page_lock (udst, true))
+                thread_exit ();
+              udst[i] = c;
+              page_unlock (udst);
+            }
+          bytes_read = read_amt;
+        }
+
+      /* Check success. */
+      if (retval < 0)
+        {
+          if (bytes_read == 0)
+            bytes_read = -1;
+          break;
+        }
+      bytes_read += retval;
+      if (retval != (off_t) read_amt)
+        {
+          /* Short read, so we're done. */
+          break;
+        }
+
+      /* Advance. */
+      udst += retval;
+      size -= retval;
+    }
+
   return bytes_read;
 }
 
-/* syscall_write */
-int 
-syscall_write (int filedes, const void * buffer, unsigned byte_size)
+/* Write system call. */
+static int
+sys_write (int handle, void *usrc_, unsigned size)
 {
-    if (byte_size <= 0)
+  uint8_t *usrc = usrc_;
+  struct file_descriptor *fd = NULL;
+  int bytes_written = 0;
+
+  /* Lookup up file descriptor. */
+  if (handle != STDOUT_FILENO)
+    fd = lookup_fd (handle);
+
+  while (size > 0)
     {
-      return byte_size;
+      /* How much bytes to write to this page? */
+      size_t page_left = PGSIZE - pg_ofs (usrc);
+      size_t write_amt = size < page_left ? size : page_left;
+      off_t retval;
+
+      /* Write from page into file. */
+      if (!page_lock (usrc, false))
+        thread_exit ();
+      lock_acquire (&fs_lock);
+      if (handle == STDOUT_FILENO)
+        {
+          putbuf ((char *) usrc, write_amt);
+          retval = write_amt;
+        }
+      else
+        retval = file_write (fd->file, usrc, write_amt);
+      lock_release (&fs_lock);
+      page_unlock (usrc);
+
+      /* Handle return value. */
+      if (retval < 0)
+        {
+          if (bytes_written == 0)
+            bytes_written = -1;
+          break;
+        }
+      bytes_written += retval;
+
+      /* If it was a short write we're done. */
+      if (retval != (off_t) write_amt)
+        break;
+
+      /* Advance. */
+      usrc += retval;
+      size -= retval;
     }
-    if (filedes == STD_OUTPUT)
-    {
-      putbuf (buffer, byte_size); // from stdio.h
-      return byte_size;
-    }
-    
-    // start writing to file
-    lock_acquire(&file_system_lock);
-    struct file *file_ptr = get_file(filedes);
-    if (!file_ptr)
-    {
-      lock_release(&file_system_lock);
-      return ERROR;
-    }
-    int bytes_written = file_write(file_ptr, buffer, byte_size); // file.h
-    lock_release (&file_system_lock);
-    return bytes_written;
+
+  return bytes_written;
 }
 
-/* syscall_seek */
-void
-syscall_seek (int filedes, unsigned new_position)
+/* Seek system call. */
+static int
+sys_seek (int handle, unsigned position)
 {
-  lock_acquire(&file_system_lock);
-  struct file *file_ptr = get_file(filedes);
-  if (!file_ptr)
+  struct file_descriptor *fd = lookup_fd (handle);
+
+  lock_acquire (&fs_lock);
+  if ((off_t) position >= 0)
+    file_seek (fd->file, position);
+  lock_release (&fs_lock);
+
+  return 0;
+}
+
+/* Tell system call. */
+static int
+sys_tell (int handle)
+{
+  struct file_descriptor *fd = lookup_fd (handle);
+  unsigned position;
+
+  lock_acquire (&fs_lock);
+  position = file_tell (fd->file);
+  lock_release (&fs_lock);
+
+  return position;
+}
+
+/* Close system call. */
+static int
+sys_close (int handle)
+{
+  struct file_descriptor *fd = lookup_fd (handle);
+  lock_acquire (&fs_lock);
+  file_close (fd->file);
+  lock_release (&fs_lock);
+  list_remove (&fd->elem);
+  free (fd);
+  return 0;
+}
+
+/* Binds a mapping id to a region of memory and a file. */
+struct mapping
   {
-    lock_release(&file_system_lock);
-    return;
-  }
-  file_seek(file_ptr, new_position);
-  lock_release(&file_system_lock);
-}
+    struct list_elem elem;      /* List element. */
+    int handle;                 /* Mapping id. */
+    struct file *file;          /* File. */
+    uint8_t *base;              /* Start of memory mapping. */
+    size_t page_cnt;            /* Number of pages mapped. */
+  };
 
-/* syscall_tell */
-unsigned
-syscall_tell(int filedes)
+/* Returns the file descriptor associated with the given handle.
+   Terminates the process if HANDLE is not associated with a
+   memory mapping. */
+static struct mapping *
+lookup_mapping (int handle)
 {
-  lock_acquire(&file_system_lock);
-  struct file *file_ptr = get_file(filedes);
-  if (!file_ptr)
-  {
-    lock_release(&file_system_lock);
-    return ERROR;
-  }
-  off_t offset = file_tell(file_ptr); //from file.h
-  lock_release(&file_system_lock);
-  return offset;
-}
-
-/* syscall_close */
-void
-syscall_close(int filedes)
-{
-  lock_acquire(&file_system_lock);
-  process_close_file(filedes);
-  lock_release(&file_system_lock);
-}
-
-
-/* function to check if pointer is valid */
-void
-validate_ptr (const void *vaddr)
-{
-    if (vaddr < USER_VADDR_BOTTOM || !is_user_vaddr(vaddr))
-    {
-      // virtual memory address is not reserved for us (out of bound)
-      syscall_exit(ERROR);
-    }
-}
-
-/* function to check if string is valid */
-void
-validate_str (const void* str)
-{
-    for (; * (char *) getpage_ptr(str) != 0; str = (char *) str + 1);
-}
-
-/* function to check if buffer is valid */
-void
-validate_buffer(const void* buf, unsigned byte_size)
-{
-  unsigned i = 0;
-  char* local_buffer = (char *)buf;
-  for (; i < byte_size; i++)
-  {
-    validate_ptr((const void*)local_buffer);
-    local_buffer++;
-  }
-}
-
-/* get the pointer to page */
-int
-getpage_ptr(const void *vaddr)
-{
-  void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);
-  if (!ptr)
-  {
-    syscall_exit(ERROR);
-  }
-  return (int)ptr;
-}
-
-/* find a child process based on pid */
-struct child_process* find_child_process(int pid)
-{
-  struct thread *t = thread_current();
+  struct thread *cur = thread_current ();
   struct list_elem *e;
-  struct list_elem *next;
-  
-  for (e = list_begin(&t->child_list); e != list_end(&t->child_list); e = next)
-  {
-    next = list_next(e);
-    struct child_process *cp = list_entry(e, struct child_process, elem);
-    if (pid == cp->pid)
+
+  for (e = list_begin (&cur->mappings); e != list_end (&cur->mappings);
+       e = list_next (e))
     {
-      return cp;
+      struct mapping *m = list_entry (e, struct mapping, elem);
+      if (m->handle == handle)
+        return m;
     }
-  }
-  return NULL;
+
+  thread_exit ();
 }
 
-/* remove a specific child process */
+/* Remove mapping M from the virtual address space,
+   writing back any pages that have changed. */
+static void
+unmap (struct mapping *m)
+{
+  /* Remove this mapping from the list of mappings for this process. */
+  list_remove(&m->elem);
+
+  /* For each page in the memory mapped file... */
+  for(int i = 0; i < m->page_cnt; i++)
+  {
+    /* ...determine whether or not the page is dirty (modified). If so, write that page back out to disk. */
+    if (pagedir_is_dirty(thread_current()->pagedir, ((const void *) ((m->base) + (PGSIZE * i)))))
+    {
+      lock_acquire (&fs_lock);
+      file_write_at(m->file, (const void *) (m->base + (PGSIZE * i)), (PGSIZE*(m->page_cnt)), (PGSIZE * i));
+      lock_release (&fs_lock);
+    }
+  }
+
+  /* Finally, deallocate all memory mapped pages (free up the process memory). */
+  for(int i = 0; i < m->page_cnt; i++)
+  {
+    page_deallocate((void *) ((m->base) + (PGSIZE * i)));
+  }
+}
+
+/* Mmap system call. */
+static int
+sys_mmap (int handle, void *addr)
+{
+  struct file_descriptor *fd = lookup_fd (handle);
+  struct mapping *m = malloc (sizeof *m);
+  size_t offset;
+  off_t length;
+
+  if (m == NULL || addr == NULL || pg_ofs (addr) != 0)
+    return -1;
+
+  m->handle = thread_current ()->next_handle++;
+  lock_acquire (&fs_lock);
+  m->file = file_reopen (fd->file);
+  lock_release (&fs_lock);
+  if (m->file == NULL)
+    {
+      free (m);
+      return -1;
+    }
+  m->base = addr;
+  m->page_cnt = 0;
+  list_push_front (&thread_current ()->mappings, &m->elem);
+
+  offset = 0;
+  lock_acquire (&fs_lock);
+  length = file_length (m->file);
+  lock_release (&fs_lock);
+  while (length > 0)
+    {
+      struct page *p = page_allocate ((uint8_t *) addr + offset, false);
+      if (p == NULL)
+        {
+          unmap (m);
+          return -1;
+        }
+      p->private = false;
+      p->file = m->file;
+      p->file_offset = offset;
+      p->file_bytes = length >= PGSIZE ? PGSIZE : length;
+      offset += p->file_bytes;
+      length -= p->file_bytes;
+      m->page_cnt++;
+    }
+
+  return m->handle;
+}
+
+/* Munmap system call. */
+static int
+sys_munmap (int mapping)
+{
+  /* Get the map corresponding to the given map id, and attempt to unmap. */
+  struct mapping *map = lookup_mapping(mapping);
+  unmap(map);
+  return 0;
+}
+
+/* On thread exit, close all open files and unmap all mappings. */
 void
-remove_child_process (struct child_process *cp)
+syscall_exit (void)
 {
-  list_remove(&cp->elem);
-  free(cp);
-}
+  struct thread *cur = thread_current ();
+  struct list_elem *e, *next;
 
-/* remove all child processes for a thread */
-void remove_all_child_processes (void) 
-{
-  struct thread *t = thread_current();
-  struct list_elem *next;
-  struct list_elem *e = list_begin(&t->child_list);
-  
-  for (;e != list_end(&t->child_list); e = next)
-  {
-    next = list_next(e);
-    struct child_process *cp = list_entry(e, struct child_process, elem);
-    list_remove(&cp->elem); //remove child process
-    free(cp);
-  }
-}
-
-/* add file to file list and return file descriptor of added file*/
-int
-add_file (struct file *file_name)
-{
-  struct process_file *process_file_ptr = malloc(sizeof(struct process_file));
-  if (!process_file_ptr)
-  {
-    return ERROR;
-  }
-  process_file_ptr->file = file_name;
-  process_file_ptr->fd = thread_current()->fd;
-  thread_current()->fd++;
-  list_push_back(&thread_current()->file_list, &process_file_ptr->elem);
-  return process_file_ptr->fd;
-  
-}
-
-/* get file that matches file descriptor */
-struct file*
-get_file (int filedes)
-{
-  struct thread *t = thread_current();
-  struct list_elem* next;
-  struct list_elem* e = list_begin(&t->file_list);
-  
-  for (; e != list_end(&t->file_list); e = next)
-  {
-    next = list_next(e);
-    struct process_file *process_file_ptr = list_entry(e, struct process_file, elem);
-    if (filedes == process_file_ptr->fd)
+  for (e = list_begin (&cur->fds); e != list_end (&cur->fds); e = next)
     {
-      return process_file_ptr->file;
+      struct file_descriptor *fd = list_entry (e, struct file_descriptor, elem);
+      next = list_next (e);
+      lock_acquire (&fs_lock);
+      file_close (fd->file);
+      lock_release (&fs_lock);
+      free (fd);
     }
-  }
-  return NULL; // nothing found
-}
 
-
-/* close the desired file descriptor */
-void
-process_close_file (int file_descriptor)
-{
-  struct thread *t = thread_current();
-  struct list_elem *next;
-  struct list_elem *e = list_begin(&t->file_list);
-  
-  for (;e != list_end(&t->file_list); e = next)
-  {
-    next = list_next(e);
-    struct process_file *process_file_ptr = list_entry (e, struct process_file, elem);
-    if (file_descriptor == process_file_ptr->fd || file_descriptor == CLOSE_ALL_FD)
+  for (e = list_begin (&cur->mappings); e != list_end (&cur->mappings);
+       e = next)
     {
-      file_close(process_file_ptr->file);
-      list_remove(&process_file_ptr->elem);
-      free(process_file_ptr);
-      if (file_descriptor != CLOSE_ALL_FD)
-      {
-        return;
-      }
+      struct mapping *m = list_entry (e, struct mapping, elem);
+      next = list_next (e);
+      unmap (m);
     }
-  }
 }

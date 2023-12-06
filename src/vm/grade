@@ -1,0 +1,852 @@
+warning: test tests/userprog/exec-bound doesn't count for grading
+warning: test tests/userprog/exec-bound-3 doesn't count for grading
+warning: test tests/userprog/sc-boundary-3 doesn't count for grading
+warning: test tests/userprog/exec-bound-2 doesn't count for grading
+TOTAL TESTING SCORE: 84.2%
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+SUMMARY BY TEST SET
+
+Test Set                                      Pts Max  % Ttl  % Max
+--------------------------------------------- --- --- ------ ------
+tests/vm/Rubric.functionality                  39/ 55  35.5%/ 50.0%
+tests/vm/Rubric.robustness                     26/ 28  13.9%/ 15.0%
+tests/userprog/Rubric.functionality           108/108  10.0%/ 10.0%
+tests/userprog/Rubric.robustness               85/ 88   4.8%/  5.0%
+tests/filesys/base/Rubric                      30/ 30  20.0%/ 20.0%
+--------------------------------------------- --- --- ------ ------
+Total                                                  84.2%/100.0%
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+SUMMARY OF INDIVIDUAL TESTS
+
+Functionality of virtual memory subsystem (tests/vm/Rubric.functionality):
+	- Test stack growth.
+	  ** 0/ 3 tests/vm/pt-grow-stack
+	  ** 0/ 3 tests/vm/pt-grow-stk-sc
+	  ** 0/ 3 tests/vm/pt-big-stk-obj
+	  ** 0/ 3 tests/vm/pt-grow-pusha
+
+	- Test paging behavior.
+	     3/ 3 tests/vm/page-linear
+	     3/ 3 tests/vm/page-parallel
+	     3/ 3 tests/vm/page-shuffle
+	     4/ 4 tests/vm/page-merge-seq
+	     4/ 4 tests/vm/page-merge-par
+	     4/ 4 tests/vm/page-merge-mm
+	  ** 0/ 4 tests/vm/page-merge-stk
+
+	- Test "mmap" system call.
+	     2/ 2 tests/vm/mmap-read
+	     2/ 2 tests/vm/mmap-write
+	     2/ 2 tests/vm/mmap-shuffle
+
+	     2/ 2 tests/vm/mmap-twice
+
+	     2/ 2 tests/vm/mmap-unmap
+	     1/ 1 tests/vm/mmap-exit
+
+	     3/ 3 tests/vm/mmap-clean
+
+	     2/ 2 tests/vm/mmap-close
+	     2/ 2 tests/vm/mmap-remove
+
+	- Section summary.
+	     15/ 20 tests passed
+	     39/ 55 points subtotal
+
+Robustness of virtual memory subsystem (tests/vm/Rubric.robustness):
+	- Test robustness of page table support.
+	     2/ 2 tests/vm/pt-bad-addr
+	     3/ 3 tests/vm/pt-bad-read
+	  ** 0/ 2 tests/vm/pt-write-code
+	     3/ 3 tests/vm/pt-write-code2
+	     4/ 4 tests/vm/pt-grow-bad
+
+	- Test robustness of "mmap" system call.
+	     1/ 1 tests/vm/mmap-bad-fd
+	     1/ 1 tests/vm/mmap-inherit
+	     1/ 1 tests/vm/mmap-null
+	     1/ 1 tests/vm/mmap-zero
+
+	     2/ 2 tests/vm/mmap-misalign
+
+	     2/ 2 tests/vm/mmap-over-code
+	     2/ 2 tests/vm/mmap-over-data
+	     2/ 2 tests/vm/mmap-over-stk
+	     2/ 2 tests/vm/mmap-overlap
+
+
+	- Section summary.
+	     13/ 14 tests passed
+	     26/ 28 points subtotal
+
+Functionality of system calls (tests/userprog/Rubric.functionality):
+	- Test argument passing on Pintos command line.
+	     3/ 3 tests/userprog/args-none
+	     3/ 3 tests/userprog/args-single
+	     3/ 3 tests/userprog/args-multiple
+	     3/ 3 tests/userprog/args-many
+	     3/ 3 tests/userprog/args-dbl-space
+
+	- Test "create" system call.
+	     3/ 3 tests/userprog/create-empty
+	     3/ 3 tests/userprog/create-long
+	     3/ 3 tests/userprog/create-normal
+	     3/ 3 tests/userprog/create-exists
+
+	- Test "open" system call.
+	     3/ 3 tests/userprog/open-missing
+	     3/ 3 tests/userprog/open-normal
+	     3/ 3 tests/userprog/open-twice
+
+	- Test "read" system call.
+	     3/ 3 tests/userprog/read-normal
+	     3/ 3 tests/userprog/read-zero
+
+	- Test "write" system call.
+	     3/ 3 tests/userprog/write-normal
+	     3/ 3 tests/userprog/write-zero
+
+	- Test "close" system call.
+	     3/ 3 tests/userprog/close-normal
+
+	- Test "exec" system call.
+	     5/ 5 tests/userprog/exec-once
+	     5/ 5 tests/userprog/exec-multiple
+	     5/ 5 tests/userprog/exec-arg
+
+	- Test "wait" system call.
+	     5/ 5 tests/userprog/wait-simple
+	     5/ 5 tests/userprog/wait-twice
+
+	- Test "exit" system call.
+	     5/ 5 tests/userprog/exit
+
+	- Test "halt" system call.
+	     3/ 3 tests/userprog/halt
+
+	- Test recursive execution of user programs.
+	    15/15 tests/userprog/multi-recurse
+
+	- Test read-only executable feature.
+	     3/ 3 tests/userprog/rox-simple
+	     3/ 3 tests/userprog/rox-child
+	     3/ 3 tests/userprog/rox-multichild
+
+	- Section summary.
+	     28/ 28 tests passed
+	    108/108 points subtotal
+
+Robustness of system calls (tests/userprog/Rubric.robustness):
+	- Test robustness of file descriptor handling.
+	     2/ 2 tests/userprog/close-stdin
+	     2/ 2 tests/userprog/close-stdout
+	     2/ 2 tests/userprog/close-bad-fd
+	     2/ 2 tests/userprog/close-twice
+	     2/ 2 tests/userprog/read-bad-fd
+	     2/ 2 tests/userprog/read-stdout
+	     2/ 2 tests/userprog/write-bad-fd
+	     2/ 2 tests/userprog/write-stdin
+	     2/ 2 tests/userprog/multi-child-fd
+
+	- Test robustness of pointer handling.
+	     3/ 3 tests/userprog/create-bad-ptr
+	     3/ 3 tests/userprog/exec-bad-ptr
+	     3/ 3 tests/userprog/open-bad-ptr
+	     3/ 3 tests/userprog/read-bad-ptr
+	     3/ 3 tests/userprog/write-bad-ptr
+
+	- Test robustness of buffer copying across page boundaries.
+	     3/ 3 tests/userprog/create-bound
+	     3/ 3 tests/userprog/open-boundary
+	     3/ 3 tests/userprog/read-boundary
+	     3/ 3 tests/userprog/write-boundary
+
+	- Test handling of null pointer and empty strings.
+	     2/ 2 tests/userprog/create-null
+	     2/ 2 tests/userprog/open-null
+	     2/ 2 tests/userprog/open-empty
+
+	- Test robustness of system call implementation.
+	     3/ 3 tests/userprog/sc-bad-arg
+	     3/ 3 tests/userprog/sc-bad-sp
+	     5/ 5 tests/userprog/sc-boundary
+	     5/ 5 tests/userprog/sc-boundary-2
+
+	- Test robustness of "exec" and "wait" system calls.
+	     5/ 5 tests/userprog/exec-missing
+	     5/ 5 tests/userprog/wait-bad-pid
+	     5/ 5 tests/userprog/wait-killed
+
+	- Test robustness of exception handling.
+	     1/ 1 tests/userprog/bad-read
+	     1/ 1 tests/userprog/bad-write
+	     1/ 1 tests/userprog/bad-jump
+	  ** 0/ 1 tests/userprog/bad-read2
+	  ** 0/ 1 tests/userprog/bad-write2
+	  ** 0/ 1 tests/userprog/bad-jump2
+
+	- Section summary.
+	     31/ 34 tests passed
+	     85/ 88 points subtotal
+
+Functionality of base file system (tests/filesys/base/Rubric):
+	- Test basic support for small files.
+	     1/ 1 tests/filesys/base/sm-create
+	     2/ 2 tests/filesys/base/sm-full
+	     2/ 2 tests/filesys/base/sm-random
+	     2/ 2 tests/filesys/base/sm-seq-block
+	     3/ 3 tests/filesys/base/sm-seq-random
+
+	- Test basic support for large files.
+	     1/ 1 tests/filesys/base/lg-create
+	     2/ 2 tests/filesys/base/lg-full
+	     2/ 2 tests/filesys/base/lg-random
+	     2/ 2 tests/filesys/base/lg-seq-block
+	     3/ 3 tests/filesys/base/lg-seq-random
+
+	- Test synchronized multiprogram access to files.
+	     4/ 4 tests/filesys/base/syn-read
+	     4/ 4 tests/filesys/base/syn-write
+	     2/ 2 tests/filesys/base/syn-remove
+
+	- Section summary.
+	     13/ 13 tests passed
+	     30/ 30 points subtotal
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+DETAILS OF tests/vm/pt-grow-stack FAILURE:
+
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (pt-grow-stack) begin
+  (pt-grow-stack) cksum: 3424492700
+  (pt-grow-stack) end
+Differences in `diff -u' format:
+  (pt-grow-stack) begin
+- (pt-grow-stack) cksum: 3424492700
+- (pt-grow-stack) end
+
+(Process exit codes are excluded for matching purposes.)
+
+OUTPUT FROM tests/vm/pt-grow-stack:
+
+Copying tests/vm/pt-grow-stack to scratch partition...
+qemu-system-x86_64 -device isa-debug-exit -drive file=/tmp/hyE8JIofBU.dsk,format=raw,index=0,media=disk -m 4 -net none -nographic -monitor null
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+Booting from Hard Disk...
+PPiiLLoo  hhddaa1
+1
+LLooaaddiinngg.............................
+Kernel command line: -q -f extract run pt-grow-stack
+Pintos booting with 3,968 kB RAM...
+367 pages available in kernel pool.
+367 pages available in user pool.
+Calibrating timer...  144,179,200 loops/s.
+ide0: unexpected interrupt
+hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
+hda1: 248 sectors (124 kB), Pintos OS kernel (20)
+hda2: 4,096 sectors (2 MB), Pintos file system (21)
+hda3: 97 sectors (48 kB), Pintos scratch (22)
+hda4: 8,192 sectors (4 MB), Pintos swap (23)
+ide1: unexpected interrupt
+filesys: using hda2
+scratch: using hda3
+swap: using hda4
+Formatting file system...done.
+Boot complete.
+Extracting ustar archive from scratch device into file system...
+Putting 'pt-grow-stack' into the file system...
+Erasing ustar archive...
+Executing 'pt-grow-stack':
+(pt-grow-stack) begin
+pt-grow-stack: exit(-1)
+Execution of 'pt-grow-stack' complete.
+Timer: 62 ticks
+Thread: 0 idle ticks, 61 kernel ticks, 1 user ticks
+hda2 (filesys): 65 reads, 198 writes
+hda3 (scratch): 96 reads, 2 writes
+hda4 (swap): 0 reads, 0 writes
+Console: 1041 characters output
+Keyboard: 0 keys pressed
+Exception: 7 page faults
+Powering off...
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+DETAILS OF tests/vm/pt-grow-stk-sc FAILURE:
+
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (pt-grow-stk-sc) begin
+  (pt-grow-stk-sc) create "sample.txt"
+  (pt-grow-stk-sc) open "sample.txt"
+  (pt-grow-stk-sc) write "sample.txt"
+  (pt-grow-stk-sc) 2nd open "sample.txt"
+  (pt-grow-stk-sc) read "sample.txt"
+  (pt-grow-stk-sc) compare written data against read data
+  (pt-grow-stk-sc) end
+Differences in `diff -u' format:
+  (pt-grow-stk-sc) begin
+- (pt-grow-stk-sc) create "sample.txt"
+- (pt-grow-stk-sc) open "sample.txt"
+- (pt-grow-stk-sc) write "sample.txt"
+- (pt-grow-stk-sc) 2nd open "sample.txt"
+- (pt-grow-stk-sc) read "sample.txt"
+- (pt-grow-stk-sc) compare written data against read data
+- (pt-grow-stk-sc) end
+
+(Process exit codes are excluded for matching purposes.)
+
+OUTPUT FROM tests/vm/pt-grow-stk-sc:
+
+Copying tests/vm/pt-grow-stk-sc to scratch partition...
+qemu-system-x86_64 -device isa-debug-exit -drive file=/tmp/Tdg0PU3bYo.dsk,format=raw,index=0,media=disk -m 4 -net none -nographic -monitor null
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+Booting from Hard Disk...
+PPiiLLoo  hhddaa1
+1
+LLooaaddiinngg.............................
+Kernel command line: -q -f extract run pt-grow-stk-sc
+Pintos booting with 3,968 kB RAM...
+367 pages available in kernel pool.
+367 pages available in user pool.
+Calibrating timer...  150,732,800 loops/s.
+ide0: unexpected interrupt
+hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
+hda1: 248 sectors (124 kB), Pintos OS kernel (20)
+hda2: 4,096 sectors (2 MB), Pintos file system (21)
+hda3: 92 sectors (46 kB), Pintos scratch (22)
+hda4: 8,192 sectors (4 MB), Pintos swap (23)
+ide1: unexpected interrupt
+filesys: using hda2
+scratch: using hda3
+swap: using hda4
+Formatting file system...done.
+Boot complete.
+Extracting ustar archive from scratch device into file system...
+Putting 'pt-grow-stk-sc' into the file system...
+Erasing ustar archive...
+Executing 'pt-grow-stk-sc':
+(pt-grow-stk-sc) begin
+pt-grow-stk-sc: exit(-1)
+Execution of 'pt-grow-stk-sc' complete.
+Timer: 61 ticks
+Thread: 2 idle ticks, 58 kernel ticks, 1 user ticks
+hda2 (filesys): 72 reads, 188 writes
+hda3 (scratch): 91 reads, 2 writes
+hda4 (swap): 0 reads, 0 writes
+Console: 1047 characters output
+Keyboard: 0 keys pressed
+Exception: 8 page faults
+Powering off...
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+DETAILS OF tests/vm/pt-big-stk-obj FAILURE:
+
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (pt-big-stk-obj) begin
+  (pt-big-stk-obj) cksum: 3256410166
+  (pt-big-stk-obj) end
+Differences in `diff -u' format:
+  (pt-big-stk-obj) begin
+- (pt-big-stk-obj) cksum: 3256410166
+- (pt-big-stk-obj) end
+
+(Process exit codes are excluded for matching purposes.)
+
+OUTPUT FROM tests/vm/pt-big-stk-obj:
+
+Copying tests/vm/pt-big-stk-obj to scratch partition...
+qemu-system-x86_64 -device isa-debug-exit -drive file=/tmp/cdgM9ZBjSY.dsk,format=raw,index=0,media=disk -m 4 -net none -nographic -monitor null
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+Booting from Hard Disk...
+PPiiLLoo  hhddaa1
+1
+LLooaaddiinngg.............................
+Kernel command line: -q -f extract run pt-big-stk-obj
+Pintos booting with 3,968 kB RAM...
+367 pages available in kernel pool.
+367 pages available in user pool.
+Calibrating timer...  143,360,000 loops/s.
+ide0: unexpected interrupt
+hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
+hda1: 248 sectors (124 kB), Pintos OS kernel (20)
+hda2: 4,096 sectors (2 MB), Pintos file system (21)
+hda3: 97 sectors (48 kB), Pintos scratch (22)
+hda4: 8,192 sectors (4 MB), Pintos swap (23)
+ide1: unexpected interrupt
+filesys: using hda2
+scratch: using hda3
+swap: using hda4
+Formatting file system...done.
+Boot complete.
+Extracting ustar archive from scratch device into file system...
+Putting 'pt-big-stk-obj' into the file system...
+Erasing ustar archive...
+Executing 'pt-big-stk-obj':
+(pt-big-stk-obj) begin
+pt-big-stk-obj: exit(-1)
+Execution of 'pt-big-stk-obj' complete.
+Timer: 59 ticks
+Thread: 0 idle ticks, 59 kernel ticks, 0 user ticks
+hda2 (filesys): 65 reads, 198 writes
+hda3 (scratch): 96 reads, 2 writes
+hda4 (swap): 0 reads, 0 writes
+Console: 1047 characters output
+Keyboard: 0 keys pressed
+Exception: 7 page faults
+Powering off...
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+DETAILS OF tests/vm/pt-grow-pusha FAILURE:
+
+Test output failed to match any acceptable form.
+
+Acceptable output:
+  (pt-grow-pusha) begin
+  (pt-grow-pusha) end
+Differences in `diff -u' format:
+  (pt-grow-pusha) begin
+- (pt-grow-pusha) end
+
+(Process exit codes are excluded for matching purposes.)
+
+OUTPUT FROM tests/vm/pt-grow-pusha:
+
+Copying tests/vm/pt-grow-pusha to scratch partition...
+qemu-system-x86_64 -device isa-debug-exit -drive file=/tmp/ktkcGWcUcs.dsk,format=raw,index=0,media=disk -m 4 -net none -nographic -monitor null
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+Booting from Hard Disk...
+PPiiLLoo  hhddaa1
+1
+LLooaaddiinngg.............................
+Kernel command line: -q -f extract run pt-grow-pusha
+Pintos booting with 3,968 kB RAM...
+367 pages available in kernel pool.
+367 pages available in user pool.
+Calibrating timer...  148,070,400 loops/s.
+ide0: unexpected interrupt
+hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
+hda1: 248 sectors (124 kB), Pintos OS kernel (20)
+hda2: 4,096 sectors (2 MB), Pintos file system (21)
+hda3: 88 sectors (44 kB), Pintos scratch (22)
+hda4: 8,192 sectors (4 MB), Pintos swap (23)
+ide1: unexpected interrupt
+filesys: using hda2
+scratch: using hda3
+swap: using hda4
+Formatting file system...done.
+Boot complete.
+Extracting ustar archive from scratch device into file system...
+Putting 'pt-grow-pusha' into the file system...
+Erasing ustar archive...
+Executing 'pt-grow-pusha':
+(pt-grow-pusha) begin
+pt-grow-pusha: exit(-1)
+Execution of 'pt-grow-pusha' complete.
+Timer: 60 ticks
+Thread: 1 idle ticks, 59 kernel ticks, 0 user ticks
+hda2 (filesys): 69 reads, 180 writes
+hda3 (scratch): 87 reads, 2 writes
+hda4 (swap): 0 reads, 0 writes
+Console: 1041 characters output
+Keyboard: 0 keys pressed
+Exception: 7 page faults
+Powering off...
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+DETAILS OF tests/vm/page-merge-stk FAILURE:
+
+run: wait for child 0: FAILED
+
+OUTPUT FROM tests/vm/page-merge-stk:
+
+Copying tests/vm/page-merge-stk to scratch partition...
+Copying tests/vm/child-qsort to scratch partition...
+qemu-system-x86_64 -device isa-debug-exit -drive file=/tmp/J83WkI9oJQ.dsk,format=raw,index=0,media=disk -m 4 -net none -nographic -monitor null
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+Booting from Hard Disk...
+PPiiLLoo  hhddaa1
+1
+LLooaaddiinngg.............................
+Kernel command line: -q -f extract run page-merge-stk
+Pintos booting with 3,968 kB RAM...
+367 pages available in kernel pool.
+367 pages available in user pool.
+Calibrating timer...  147,251,200 loops/s.
+ide0: unexpected interrupt
+hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
+hda1: 248 sectors (124 kB), Pintos OS kernel (20)
+hda2: 4,096 sectors (2 MB), Pintos file system (21)
+hda3: 191 sectors (95 kB), Pintos scratch (22)
+hda4: 8,192 sectors (4 MB), Pintos swap (23)
+ide1: unexpected interrupt
+filesys: using hda2
+scratch: using hda3
+swap: using hda4
+Formatting file system...done.
+Boot complete.
+Extracting ustar archive from scratch device into file system...
+Putting 'page-merge-stk' into the file system...
+Putting 'child-qsort' into the file system...
+Erasing ustar archive...
+Executing 'page-merge-stk':
+(page-merge-stk) begin
+(page-merge-stk) init
+(page-merge-stk) sort chunk 0
+(page-merge-stk) sort chunk 1
+child-qsort: exit(-1)
+(page-merge-stk) sort chunk 2
+child-qsort: exit(-1)
+(page-merge-stk) sort chunk 3
+child-qsort: exit(-1)
+(page-merge-stk) sort chunk 4
+child-qsort: exit(-1)
+(page-merge-stk) sort chunk 5
+child-qsort: exit(-1)
+(page-merge-stk) sort chunk 6
+child-qsort: exit(-1)
+(page-merge-stk) sort chunk 7
+child-qsort: exit(-1)
+(page-merge-stk) wait for child 0
+(page-merge-stk) wait for child 0: FAILED
+page-merge-stk: exit(1)
+Execution of 'page-merge-stk' complete.
+Timer: 106 ticks
+Thread: 17 idle ticks, 58 kernel ticks, 31 user ticks
+hda2 (filesys): 1045 reads, 4772 writes
+hda3 (scratch): 190 reads, 2 writes
+hda4 (swap): 0 reads, 0 writes
+Console: 1592 characters output
+Keyboard: 0 keys pressed
+Exception: 292 page faults
+Powering off...
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+DETAILS OF tests/vm/pt-write-code FAILURE:
+
+Kernel panic in run: PANIC at ../../userprog/exception.c:100 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0xc002bba6 0xc003066d 0xc00307a6 0xc0022510 0xc00227b4 0x80480ad 0x80488a8 0x80488e8
+Translation of call stack:
+In kernel.o:
+0xc002bba6: debug_panic (.../../lib/kernel/debug.c:38)
+0xc003066d: kill (.../userprog/exception.c:106)
+0xc00307a6: page_fault (....c:165 (discriminator 12))
+0xc0022510: intr_handler (..../threads/interrupt.c:367)
+0xc00227b4: intr_entry (intr-stubs.o:?)
+In tests/vm/pt-write-code:
+0x080480ad: test_main (...sts/vm/pt-write-code.c:10)
+0x080488a8: main (...ild/../../tests/main.c:13)
+0x080488e8: _start (.../../../lib/user/entry.c:9)
+Translations of user virtual addresses above are based on a guess at
+the binary to use.  If this guess is incorrect, then those
+translations will be misleading.
+
+OUTPUT FROM tests/vm/pt-write-code:
+
+Copying tests/vm/pt-write-code to scratch partition...
+qemu-system-x86_64 -device isa-debug-exit -drive file=/tmp/hfmeA927A_.dsk,format=raw,index=0,media=disk -m 4 -net none -nographic -monitor null
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+Booting from Hard Disk...
+PPiiLLoo  hhddaa1
+1
+LLooaaddiinngg.............................
+Kernel command line: -q -f extract run pt-write-code
+Pintos booting with 3,968 kB RAM...
+367 pages available in kernel pool.
+367 pages available in user pool.
+Calibrating timer...  160,972,800 loops/s.
+ide0: unexpected interrupt
+hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
+hda1: 248 sectors (124 kB), Pintos OS kernel (20)
+hda2: 4,096 sectors (2 MB), Pintos file system (21)
+hda3: 88 sectors (44 kB), Pintos scratch (22)
+hda4: 8,192 sectors (4 MB), Pintos swap (23)
+ide1: unexpected interrupt
+filesys: using hda2
+scratch: using hda3
+swap: using hda4
+Formatting file system...done.
+Boot complete.
+Extracting ustar archive from scratch device into file system...
+Putting 'pt-write-code' into the file system...
+Erasing ustar archive...
+Executing 'pt-write-code':
+(pt-write-code) begin
+Page fault at 0x8048094: rights violation error writing page in user context.
+pt-write-code: dying due to interrupt 0x0e (#PF Page-Fault Exception).
+Interrupt 0x0e (#PF Page-Fault Exception) at eip=0x80480ad
+ cr2=08048094 error=00000007
+ eax=0804ca48 ebx=0804ca48 ecx=000000ff edx=08048094
+ esi=00000000 edi=00000000 esp=bfffff80 ebp=bfffff98
+ cs=001b ds=0023 es=0023 ss=0023
+Interrupt 0x0e (#PF Page-Fault Exception) at eip=0x80480ad
+ cr2=08048094 error=00000007
+ eax=0804ca48 ebx=0804ca48 ecx=000000ff edx=08048094
+ esi=00000000 edi=00000000 esp=bfffff80 ebp=bfffff98
+ cs=001b ds=0023 es=0023 ss=0023
+Kernel PANIC at ../../userprog/exception.c:100 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0xc002bba6 0xc003066d 0xc00307a6 0xc0022510 0xc00227b4 0x80480ad 0x80488a8 0x80488e8.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 62 ticks
+Thread: 2 idle ticks, 59 kernel ticks, 1 user ticks
+hda2 (filesys): 69 reads, 180 writes
+hda3 (scratch): 87 reads, 2 writes
+hda4 (swap): 0 reads, 0 writes
+Console: 1935 characters output
+Keyboard: 0 keys pressed
+Exception: 7 page faults
+Powering off...
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+DETAILS OF tests/userprog/bad-read2 FAILURE:
+
+Kernel panic in run: PANIC at ../../userprog/exception.c:100 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0xc002bba6 0xc003066d 0xc00307a6 0xc0022510 0xc00227b4 0x80480ad 0x8048115 0x80488f4
+Translation of call stack:
+In kernel.o:
+0xc002bba6: debug_panic (.../../lib/kernel/debug.c:38)
+0xc003066d: kill (.../userprog/exception.c:106)
+0xc00307a6: page_fault (....c:165 (discriminator 12))
+0xc0022510: intr_handler (..../threads/interrupt.c:367)
+0xc00227b4: intr_entry (intr-stubs.o:?)
+In tests/userprog/bad-read2:
+0x080480ad: test_main (...s/userprog/bad-read2.c:10)
+0x08048115: main (...ild/../../tests/main.c:13)
+0x080488f4: _start (.../../../lib/user/entry.c:9)
+Translations of user virtual addresses above are based on a guess at
+the binary to use.  If this guess is incorrect, then those
+translations will be misleading.
+
+OUTPUT FROM tests/userprog/bad-read2:
+
+Copying tests/userprog/bad-read2 to scratch partition...
+qemu-system-x86_64 -device isa-debug-exit -drive file=/tmp/ft0Q3EZfnf.dsk,format=raw,index=0,media=disk -m 4 -net none -nographic -monitor null
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+Booting from Hard Disk...
+PPiiLLoo  hhddaa1
+1
+LLooaaddiinngg.............................
+Kernel command line: -q -f extract run bad-read2
+Pintos booting with 3,968 kB RAM...
+367 pages available in kernel pool.
+367 pages available in user pool.
+Calibrating timer...  150,732,800 loops/s.
+ide0: unexpected interrupt
+hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
+hda1: 248 sectors (124 kB), Pintos OS kernel (20)
+hda2: 4,096 sectors (2 MB), Pintos file system (21)
+hda3: 88 sectors (44 kB), Pintos scratch (22)
+hda4: 8,192 sectors (4 MB), Pintos swap (23)
+ide1: unexpected interrupt
+filesys: using hda2
+scratch: using hda3
+swap: using hda4
+Formatting file system...done.
+Boot complete.
+Extracting ustar archive from scratch device into file system...
+Putting 'bad-read2' into the file system...
+Erasing ustar archive...
+Executing 'bad-read2':
+(bad-read2) begin
+Page fault at 0xc0000000: rights violation error reading page in user context.
+bad-read2: dying due to interrupt 0x0e (#PF Page-Fault Exception).
+Interrupt 0x0e (#PF Page-Fault Exception) at eip=0x80480ad
+ cr2=c0000000 error=00000005
+ eax=c0000000 ebx=0804ca88 ecx=000000ff edx=000000ad
+ esi=00000000 edi=00000000 esp=bfffff80 ebp=bfffff98
+ cs=001b ds=0023 es=0023 ss=0023
+Interrupt 0x0e (#PF Page-Fault Exception) at eip=0x80480ad
+ cr2=c0000000 error=00000005
+ eax=c0000000 ebx=0804ca88 ecx=000000ff edx=000000ad
+ esi=00000000 edi=00000000 esp=bfffff80 ebp=bfffff98
+ cs=001b ds=0023 es=0023 ss=0023
+Kernel PANIC at ../../userprog/exception.c:100 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0xc002bba6 0xc003066d 0xc00307a6 0xc0022510 0xc00227b4 0x80480ad 0x8048115 0x80488f4.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 63 ticks
+Thread: 1 idle ticks, 59 kernel ticks, 3 user ticks
+hda2 (filesys): 69 reads, 180 writes
+hda3 (scratch): 87 reads, 2 writes
+hda4 (swap): 0 reads, 0 writes
+Console: 1916 characters output
+Keyboard: 0 keys pressed
+Exception: 8 page faults
+Powering off...
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+DETAILS OF tests/userprog/bad-write2 FAILURE:
+
+Kernel panic in run: PANIC at ../../userprog/exception.c:100 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0xc002bba6 0xc003066d 0xc00307a6 0xc0022510 0xc00227b4 0x80480ac 0x8048108 0x80488e7
+Translation of call stack:
+In kernel.o:
+0xc002bba6: debug_panic (.../../lib/kernel/debug.c:38)
+0xc003066d: kill (.../userprog/exception.c:106)
+0xc00307a6: page_fault (....c:165 (discriminator 12))
+0xc0022510: intr_handler (..../threads/interrupt.c:367)
+0xc00227b4: intr_entry (intr-stubs.o:?)
+In tests/userprog/bad-write2:
+0x080480ac: test_main (.../userprog/bad-write2.c:10)
+0x08048108: main (...ild/../../tests/main.c:13)
+0x080488e7: _start (.../../../lib/user/entry.c:9)
+Translations of user virtual addresses above are based on a guess at
+the binary to use.  If this guess is incorrect, then those
+translations will be misleading.
+
+OUTPUT FROM tests/userprog/bad-write2:
+
+Copying tests/userprog/bad-write2 to scratch partition...
+qemu-system-x86_64 -device isa-debug-exit -drive file=/tmp/AHZxsi9NgX.dsk,format=raw,index=0,media=disk -m 4 -net none -nographic -monitor null
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+Booting from Hard Disk...
+PPiiLLoo  hhddaa1
+1
+LLooaaddiinngg.............................
+Kernel command line: -q -f extract run bad-write2
+Pintos booting with 3,968 kB RAM...
+367 pages available in kernel pool.
+367 pages available in user pool.
+Calibrating timer...  160,563,200 loops/s.
+ide0: unexpected interrupt
+hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
+hda1: 248 sectors (124 kB), Pintos OS kernel (20)
+hda2: 4,096 sectors (2 MB), Pintos file system (21)
+hda3: 88 sectors (44 kB), Pintos scratch (22)
+hda4: 8,192 sectors (4 MB), Pintos swap (23)
+ide1: unexpected interrupt
+filesys: using hda2
+scratch: using hda3
+swap: using hda4
+Formatting file system...done.
+Boot complete.
+Extracting ustar archive from scratch device into file system...
+Putting 'bad-write2' into the file system...
+Erasing ustar archive...
+Executing 'bad-write2':
+(bad-write2) begin
+Page fault at 0xc0000000: rights violation error writing page in user context.
+bad-write2: dying due to interrupt 0x0e (#PF Page-Fault Exception).
+Interrupt 0x0e (#PF Page-Fault Exception) at eip=0x80480ac
+ cr2=c0000000 error=00000007
+ eax=0804ca3c ebx=0804ca3c ecx=000000ff edx=c0000000
+ esi=00000000 edi=00000000 esp=bfffff80 ebp=bfffff98
+ cs=001b ds=0023 es=0023 ss=0023
+Interrupt 0x0e (#PF Page-Fault Exception) at eip=0x80480ac
+ cr2=c0000000 error=00000007
+ eax=0804ca3c ebx=0804ca3c ecx=000000ff edx=c0000000
+ esi=00000000 edi=00000000 esp=bfffff80 ebp=bfffff98
+ cs=001b ds=0023 es=0023 ss=0023
+Kernel PANIC at ../../userprog/exception.c:100 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0xc002bba6 0xc003066d 0xc00307a6 0xc0022510 0xc00227b4 0x80480ac 0x8048108 0x80488e7.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 64 ticks
+Thread: 1 idle ticks, 62 kernel ticks, 1 user ticks
+hda2 (filesys): 69 reads, 180 writes
+hda3 (scratch): 87 reads, 2 writes
+hda4 (swap): 0 reads, 0 writes
+Console: 1921 characters output
+Keyboard: 0 keys pressed
+Exception: 7 page faults
+Powering off...
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+DETAILS OF tests/userprog/bad-jump2 FAILURE:
+
+Kernel panic in run: PANIC at ../../userprog/exception.c:100 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0xc002bba6 0xc003066d 0xc00307a6 0xc0022510 0xc00227b4 0xc0000000 0x8048115 0x80488f4
+Translation of call stack:
+In kernel.o:
+0xc002bba6: debug_panic (.../../lib/kernel/debug.c:38)
+0xc003066d: kill (.../userprog/exception.c:106)
+0xc00307a6: page_fault (....c:165 (discriminator 12))
+0xc0022510: intr_handler (..../threads/interrupt.c:367)
+0xc00227b4: intr_entry (intr-stubs.o:?)
+0xc0000000: (unknown)
+In tests/userprog/bad-jump2:
+0x08048115: main (...ild/../../tests/main.c:13)
+0x080488f4: _start (.../../../lib/user/entry.c:9)
+Translations of user virtual addresses above are based on a guess at
+the binary to use.  If this guess is incorrect, then those
+translations will be misleading.
+
+OUTPUT FROM tests/userprog/bad-jump2:
+
+Copying tests/userprog/bad-jump2 to scratch partition...
+qemu-system-x86_64 -device isa-debug-exit -drive file=/tmp/7R79eFpX79.dsk,format=raw,index=0,media=disk -m 4 -net none -nographic -monitor null
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+Booting from Hard Disk...
+PPiiLLoo  hhddaa1
+1
+LLooaaddiinngg.............................
+Kernel command line: -q -f extract run bad-jump2
+Pintos booting with 3,968 kB RAM...
+367 pages available in kernel pool.
+367 pages available in user pool.
+Calibrating timer...  156,672,000 loops/s.
+ide0: unexpected interrupt
+hda: 13,104 sectors (6 MB), model "QM00001", serial "QEMU HARDDISK"
+hda1: 248 sectors (124 kB), Pintos OS kernel (20)
+hda2: 4,096 sectors (2 MB), Pintos file system (21)
+hda3: 88 sectors (44 kB), Pintos scratch (22)
+hda4: 8,192 sectors (4 MB), Pintos swap (23)
+ide1: unexpected interrupt
+filesys: using hda2
+scratch: using hda3
+swap: using hda4
+Formatting file system...done.
+Boot complete.
+Extracting ustar archive from scratch device into file system...
+Putting 'bad-jump2' into the file system...
+Erasing ustar archive...
+Executing 'bad-jump2':
+(bad-jump2) begin
+Page fault at 0xc0000000: rights violation error reading page in user context.
+bad-jump2: dying due to interrupt 0x0e (#PF Page-Fault Exception).
+Interrupt 0x0e (#PF Page-Fault Exception) at eip=0xc0000000
+ cr2=c0000000 error=00000005
+ eax=c0000000 ebx=0804ca88 ecx=000000ff edx=000000ad
+ esi=00000000 edi=00000000 esp=bfffff7c ebp=bfffff98
+ cs=001b ds=0023 es=0023 ss=0023
+Interrupt 0x0e (#PF Page-Fault Exception) at eip=0xc0000000
+ cr2=c0000000 error=00000005
+ eax=c0000000 ebx=0804ca88 ecx=000000ff edx=000000ad
+ esi=00000000 edi=00000000 esp=bfffff7c ebp=bfffff98
+ cs=001b ds=0023 es=0023 ss=0023
+Kernel PANIC at ../../userprog/exception.c:100 in kill(): Kernel bug - unexpected interrupt in kernel
+Call stack: 0xc002bba6 0xc003066d 0xc00307a6 0xc0022510 0xc00227b4 0xc0000000 0x8048115 0x80488f4.
+The `backtrace' program can make call stacks useful.
+Read "Backtraces" in the "Debugging Tools" chapter
+of the Pintos documentation for more information.
+Timer: 59 ticks
+Thread: 1 idle ticks, 56 kernel ticks, 2 user ticks
+hda2 (filesys): 69 reads, 180 writes
+hda3 (scratch): 87 reads, 2 writes
+hda4 (swap): 0 reads, 0 writes
+Console: 1919 characters output
+Keyboard: 0 keys pressed
+Exception: 8 page faults
+Powering off...

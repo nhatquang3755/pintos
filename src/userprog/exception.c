@@ -4,9 +4,8 @@
 #include "userprog/gdt.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
-#include <user/syscall.h>
-#include "syscall.h"
-//#include "syscall.c"
+#include "userprog/syscall.h"
+#include "vm/page.h"
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
@@ -92,9 +91,7 @@ kill (struct intr_frame *f)
       printf ("%s: dying due to interrupt %#04x (%s).\n",
               thread_name (), f->vec_no, intr_name (f->vec_no));
       intr_dump_frame (f);
-      //thread_exit (); 
-      syscall_exit(-1);
-      
+
     case SEL_KCSEG:
       /* Kernel's code segment, which indicates a kernel bug.
          Kernel code shouldn't throw exceptions.  (Page faults
@@ -152,9 +149,16 @@ page_fault (struct intr_frame *f)
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
 
-  /* To implement virtual memory, delete the rest of the function
-     body, and replace it with code that brings in the page to
-     which fault_addr refers. */
+  
+  /* Allow the pager to try to handle it. */
+  bool load = page_in (fault_addr, write);
+      if (load == true) {
+        return;
+      } else {
+        thread_exit ();
+      }
+  
+
   printf ("Page fault at %p: %s error %s page in %s context.\n",
           fault_addr,
           not_present ? "not present" : "rights violation",
