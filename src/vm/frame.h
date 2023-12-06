@@ -7,7 +7,7 @@
 /* A physical frame. */
 struct frame 
   {
-    struct lock lock;           /* Prevent simultaneous access. */
+    struct lock lock;           /* Lock for synchronous frame-ing. */
     void *base;                 /* Kernel virtual base address. */
     struct page *page;          /* Mapped process page, if any. */
   };
