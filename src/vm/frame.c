@@ -8,11 +8,11 @@
 #include "threads/synch.h"
 #include "threads/vaddr.h"
 
-static struct frame *frame_table;
+static struct frame *frames;
 static size_t frame_cnt;
 
 static struct lock scan_lock;
-static size_t hand;
+static size_t index;
 
 /* Initialize the frame manager. */
 void frame_init (void) {
@@ -22,7 +22,7 @@ void frame_init (void) {
   lock_init (&scan_lock);
   
   // Init the size of the frame table
-  frames = malloc (sizeof *frame_table * init_ram_pages);
+  frames = malloc (sizeof *frames * init_ram_pages);
   // If cannot get init the size, PANIC kernel
   if (frames == NULL) {
     PANIC ("out of memory allocating page frames");
@@ -48,7 +48,7 @@ static struct frame *try_frame_alloc_and_lock (struct page *page) {
 
   /* Find a free frame from the frame table. */
   for (i = 0; i < frame_cnt; i++) {
-    struct frame *f = &frame_table[i];
+    struct frame *f = &frames[i];
     
     // if the frame is not locked (already have page), continue
     if (!lock_try_acquire (&f->lock)) {
@@ -68,7 +68,7 @@ static struct frame *try_frame_alloc_and_lock (struct page *page) {
   for (i = 0; i < frame_cnt * 2; i++) {
       
     // if the index gets over max_frame_index, roll over the index to 0 to ivest again
-    struct frame *f = &frame_table[index];
+    struct frame *f = &frames[index];
     if (++index >= frame_cnt) {
       index = 0;
     }

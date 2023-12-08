@@ -10,8 +10,8 @@
 #include "threads/vaddr.h"
 
 /* Maximum size of process stack, in bytes. */
-/* Right now it is 1 megabyte. */
-#define STACK_MAX (8192 * 1024)
+/* Right now it is 8 megabyte. */
+#define STACK_MAX (1 << 23)
 
 /* Destroys a page, which must be in the current process's
    page table.  Used as a callback for hash_destroy(). */
@@ -36,27 +36,32 @@ void page_exit (void) {
    or a null pointer if no such page exists.
    Allocates stack pages as necessary. */
 static struct page *page_for_addr (const void *address) {
+
+  // addr is valid
   if (address < PHYS_BASE) {
     struct page p;
     struct hash_elem *e;
     /* Find existing page. */
     p.addr = (void *) pg_round_down (address);
     e = hash_find (thread_current ()->pages, &p.hash_elem);
+    
+    // found the page entry, return
     if (e != NULL) {
       return hash_entry (e, struct page, hash_elem);
     }
 
     /* -We need to determine if the program is attempting to access the stack.
-       -First, we ensure that the address is not beyond the bounds of the stack space (1 MB in this
-        case).
+       -First, we ensure that the address is not beyond the bounds of the stack space (8 MB below PHYS_BASE address).
        -As long as the user is attempting to acsess an address within 32 bytes (determined by the space
         needed for a PUSHA command) of the stack pointers, we assume that the address is valid. In that
         case, we should allocate one more stack page accordingly.
     */
-    if ((p.addr > PHYS_BASE - STACK_MAX) && ((void *)thread_current()->user_esp - 32 < address)) {
-      return page_allocate (p.addr, read_only);
+    if ((PHYS_BASE - p.addr <  STACK_MAX) && ((void *)thread_current()->user_esp - 32 < address) ) {
+      return page_allocate (p.addr, false);
     } 
   }
+
+  // if no page found or no new page pushed in stack, return NULL
   return NULL;
 }
 
@@ -69,11 +74,13 @@ static bool do_page_in (struct page *p) {
     return false;
   }
 
-  /* Copy data into the frame. */
+  /* If page was swap out, swap it in. */
   if (p->sector != (block_sector_t) -1) {
     /* Get data from swap. */
     swap_in (p);
   }
+
+  // Else if page have its file, read it
   else if (p->file != NULL) {
     /* Get data from file. */
     off_t read_bytes = file_read_at (p->file, p->frame->base, p->file_bytes, p->file_offset);
@@ -83,6 +90,8 @@ static bool do_page_in (struct page *p) {
       printf ("bytes read (%"PROTd") != bytes requested (%"PROTd")\n", read_bytes, p->file_bytes);
     }
   }
+
+  // Else, provide the all-zero page
   else {
     /* Provide all-zero page. */
     memset (p->frame->base, 0, PGSIZE);
@@ -91,8 +100,7 @@ static bool do_page_in (struct page *p) {
   return true;
 }
 
-/* Faults in the page containing FAULT_ADDR.
-   Returns true if successful, false on failure. */
+/* Brings in page from swap or file. This also supplement page_faul () from project 2 */
 bool page_in (void *addr) {
   struct page *p;
   bool success;
@@ -103,6 +111,7 @@ bool page_in (void *addr) {
   }
 
   p = page_for_addr (addr);
+  // if no page exists for the address, also false
   if (p == NULL) {
     return false;
   }
@@ -110,15 +119,20 @@ bool page_in (void *addr) {
   if (addr >= PHYS_BASE) {
     return false;
   }
-
+  
+  // lock the frame handling the page
   frame_lock (p);
   if (p->frame == NULL) {
+    // if the page doesn't have its frame
+    // and cannot get the frame for it,
+    // return false 
     if (!do_page_in (p))
       return false;
   }
   ASSERT (lock_held_by_current_thread (&p->frame->lock));
 
-  /* Install frame into page table. */
+  // if we have the frame for handling the page
+  // map <vaddr, frame base addr> => page table entry
   success = pagedir_set_page (thread_current ()->pagedir, p->addr, p->frame->base, !p->read_only);
 
   /* Release frame. */
@@ -188,6 +202,9 @@ bool page_accessed_recently (struct page *p) {
   ASSERT (lock_held_by_current_thread (&p->frame->lock));
 
   was_accessed = pagedir_is_accessed (p->thread->pagedir, p->addr);
+
+  // if page is accessed recently, we set the "accessed recently" to false
+  // the next time we meet that page, if nothing changed (be accessed again during time), we should evict it
   if (was_accessed) {
     pagedir_set_accessed (p->thread->pagedir, p->addr, false);
   }
@@ -200,6 +217,8 @@ bool page_accessed_recently (struct page *p) {
 struct page *page_allocate (void *vaddr, bool read_only) {
   struct thread *t = thread_current ();
   struct page *p = malloc (sizeof *p);
+
+  // if we allocate the page successfully, init its elements 
   if (p != NULL) {
     p->addr = pg_round_down (vaddr);
 
@@ -216,8 +235,8 @@ struct page *page_allocate (void *vaddr, bool read_only) {
 
     p->thread = t;
 
+    // if the page table already mapped the page, we don't want to add it and free it
     if (hash_insert (t->pages, &p->hash_elem) != NULL) {
-      /* Already mapped. */
       free (p);
       p = NULL;
     }
@@ -231,12 +250,19 @@ void page_deallocate (void *vaddr) {
   struct page *p = page_for_addr (vaddr);
   ASSERT (p != NULL);
   frame_lock (p);
+
+  // found the page to evict
   if (p->frame) {
     struct frame *f = p->frame;
+
+    // use page_out to handle the pagedir and file
     if (p->file && !p->private) {
       page_out (p);
-      frame_free (f);
     }
+    // free the frame have page p
+    frame_free (f);
+  }
+  // delete page p hash elem in page table
   hash_delete (thread_current ()->pages, &p->hash_elem);
   free (p);
 }
